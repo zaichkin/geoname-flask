@@ -34,15 +34,16 @@ def compare(city1, city2):
     cur = conn.cursor()
     fin = []
 
-    cur.execute(f"SELECT * FROM geoname  WHERE alternatenames LIKE '{city1}' ORDER BY population DESC LIMIT 1")
+    cur.execute(f"SELECT * FROM geoname  WHERE alternatenames LIKE '%{city1}%' ORDER BY population DESC LIMIT 1")
     ct1 = cur.fetchall()[0]
-    cur.execute(f"SELECT * FROM geoname  WHERE alternatenames LIKE '{city2}' ORDER BY population DESC LIMIT 1")
+    cur.execute(f"SELECT * FROM geoname  WHERE alternatenames LIKE '%{city2}%' ORDER BY population DESC LIMIT 1")
     ct2 = cur.fetchall()[0]
 
+
     if ct1[4] > ct2[4]:
-        nrt = ct1[1]
+        nrt = ct1[3]
     else:
-        nrt = ct2[1]
+        nrt = ct2[3]
 
     fin.append(ct1)
     fin.append(ct2)
@@ -50,15 +51,27 @@ def compare(city1, city2):
     tz1 = datetime.now(pytz.timezone(ct1[17]))
     tz2 = datetime.now(pytz.timezone(ct2[17]))
 
+    p = nrt.split(',')
+    print(p)
+    for t in p:
+        g = 0
+        for s in t:
+            if bool(set(alphabet).intersection(set(s.lower()))) or s ==' ':
+                g+=1
+            if (len(t) == g):
+                nrt = t
+
+
+
     fin.append((f"Город {nrt} находится севернее", f"Временная разница UTC + {abs(int(str(tz1)[27:29])-int(str(tz2)[27:29]))}"))
 
     return  jsonify(fin)
 
-@app.route('/find/<string:city1>', methods=['GET'])
-def helper(city1):
+@app.route('/find/<string:city>', methods=['GET'])
+def helper(city):
     conn = sqlite3.connect('RU.db')
     cur = conn.cursor()
-    cur.execute(f"SELECT alternatenames FROM geoname WHERE alternatenames LIKE '%{city1}%'")
+    cur.execute(f"SELECT alternatenames FROM geoname WHERE alternatenames LIKE '%{city}%'")
     lst = cur.fetchall()
     hv = []
     for tp in lst:
@@ -69,7 +82,7 @@ def helper(city1):
                 for s in t:
                     if bool(set(alphabet).intersection(set(s.lower()))) or s ==' ':
                         g+=1
-                    if (len(t) == g) and (t.find(city1) != -1):
+                    if (len(t) == g) and (t.find(city) != -1):
                         hv.append(t)
 
     return jsonify(hv)
